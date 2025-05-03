@@ -2,7 +2,9 @@ use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyList};
 use pyo3::PyObject;
 use regex::Regex;
+use rayon::prelude::*;
 use std::collections::HashMap;
+use std::sync::Arc;
 
 #[pyclass]
 struct RegexMatcher {
@@ -87,6 +89,81 @@ impl RegexMatcher {
             
             None
         })
+    }
+    
+    fn match_messages_batch(&self, messages: &PyList) -> PyResult<Vec<Option<(String, PyObject)>>> {
+        let patterns: Arc<Vec<(Regex, String)>> = Arc::new(self.patterns.clone());
+        
+        let string_messages: Vec<String> = messages.iter()
+            .map(|item| item.extract::<String>())
+            .collect::<Result<Vec<_>, _>>()?;
+            
+        let native_results: Vec<_> = string_messages
+            .par_iter()
+            .map(|message| {
+                let mut matched = None;
+                
+                for (idx, (regex, event_type)) in patterns.iter().enumerate() {
+                    if let Some(captures) = regex.captures(message) {
+                        let mut capture_data = Vec::new();
+                        for name in regex.capture_names().filter_map(|n| n) {
+                            if let Some(m) = captures.name(name) {
+                                capture_data.push((name.to_string(), m.as_str().to_string()));
+                            }
+                        }
+                        
+                        matched = Some((idx, event_type.clone(), capture_data));
+                        break;
+                    }
+                }
+                
+                matched
+            })
+            .collect();
+        
+        Python::with_gil(|py| {
+            Ok(native_results.into_iter().map(|result| {
+                match result {
+                    Some((_, event_type, capture_data)) => {
+                        let dict = PyDict::new(py);
+                        for (name, value) in capture_data {
+                            if let Err(_) = dict.set_item(name, value) {
+                                return None;
+                            }
+                        }
+                        Some((event_type, dict.to_object(py)))
+                    },
+                    None => None,
+                }
+            }).collect())
+        })
+    }
+
+    fn match_messages_batch_native(
+        &self,
+        messages: Vec<String>,
+    ) -> Vec<Option<(String, Vec<(String, String)>)>> {
+        let patterns: Arc<Vec<(Regex, String)>> = Arc::new(self.patterns.clone());
+
+        messages
+            .into_par_iter()
+            .map(|message| {
+                for (regex, event_type) in patterns.iter() {
+                    if let Some(captures) = regex.captures(&message) {
+                        let capture_data: Vec<(String, String)> = regex
+                            .capture_names()
+                            .filter_map(|n| n)
+                            .filter_map(|name| {
+                                captures.name(name).map(|m| (name.to_string(), m.as_str().to_string()))
+                            })
+                            .collect();
+
+                        return Some((event_type.clone(), capture_data));
+                    }
+                }
+                None
+            })
+            .collect()
     }
     
     fn get_available_formats(&self) -> Vec<String> {
