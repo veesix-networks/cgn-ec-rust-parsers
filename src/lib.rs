@@ -144,7 +144,6 @@ impl RegexMatcher {
     }
 }
 
-// ✅ Moved outside the #[pymethods] block
 fn match_one(
     message: &str,
     patterns: &[(Regex, String)],
