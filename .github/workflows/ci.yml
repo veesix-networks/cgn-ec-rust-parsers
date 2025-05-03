@@ -14,14 +14,13 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: 3.x
+          python-version: 3.12
       - name: Build wheels
         uses: PyO3/maturin-action@v1
         with:
           target: ${{ matrix.platform.target }}
-          args: --release --out dist --find-interpreter
+          args: --release --out dist --find-interpreter -i python3.12
           sccache: ${{ !startsWith(github.ref, 'refs/tags/') }}
-          manylinux: auto
       - name: Upload wheels
         uses: actions/upload-artifact@v4
         with:
@@ -48,7 +47,7 @@ jobs:
         uses: PyO3/maturin-action@v1
         with:
           command: upload
-          args: --non-interactive --skip-existing wheels-*/* --repository-url https://test.pypi.org/legacy/ -i python3.12
+          args: --non-interactive --skip-existing wheels-*/* --repository-url https://test.pypi.org/legacy/
 
   publish-to-pypi:
     name: Publish Python 🐍 rust bindings 📦 to PyPI
@@ -70,4 +69,4 @@ jobs:
         uses: PyO3/maturin-action@v1
         with:
           command: upload
-          args: --non-interactive --skip-existing wheels-*/* --repository-url https://pypi.org/legacy/ -i python3.12
+          args: --non-interactive --skip-existing wheels-*/* --repository-url https://pypi.org/legacy/
