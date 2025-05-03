@@ -48,7 +48,7 @@ jobs:
         uses: PyO3/maturin-action@v1
         with:
           command: upload
-          args: --non-interactive --skip-existing wheels-*/* --repository-url https://test.pypi.org/legacy/
+          args: --non-interactive --skip-existing wheels-*/* --repository-url https://test.pypi.org/legacy/ -i python3.12
 
   publish-to-pypi:
     name: Publish Python 🐍 rust bindings 📦 to PyPI
@@ -70,4 +70,4 @@ jobs:
         uses: PyO3/maturin-action@v1
         with:
           command: upload
-          args: --non-interactive --skip-existing wheels-*/* --repository-url https://pypi.org/legacy/
+          args: --non-interactive --skip-existing wheels-*/* --repository-url https://pypi.org/legacy/ -i python3.12
