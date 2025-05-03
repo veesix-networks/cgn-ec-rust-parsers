@@ -43,11 +43,11 @@ jobs:
         uses: actions/attest-build-provenance@v2
         with:
           subject-path: 'wheels-*/*'
-      - name: Publish to PyPI
+      - name: Publish to TestPyPI
         uses: PyO3/maturin-action@v1
         with:
           command: upload
-          args: --non-interactive --skip-existing wheels-*/* --repository-url https://test.pypi.org/legacy/
+          args: --non-interactive --skip-existing wheels-*/* --repository-url=https://test.pypi.org/legacy/
 
   publish-to-pypi:
     name: Publish Python 🐍 rust bindings 📦 to PyPI
@@ -69,4 +69,4 @@ jobs:
         uses: PyO3/maturin-action@v1
         with:
           command: upload
-          args: --non-interactive --skip-existing wheels-*/* --repository-url https://pypi.org/legacy/
+          args: --non-interactive --skip-existing wheels-*/*
